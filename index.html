@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>당신은 생각하고 계십니까?</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+  @font-face {
+  font-family: 'Paperlogy-8ExtraBold';
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-8ExtraBold.woff2') format('woff2');
+  }
+
+  /* ------------------ 새로운 애니메이션 정의 ------------------ */
+  /* 버튼이 bottom-shape로 떨어져 착지하는 애니메이션 */
+  @keyframes fallToLand {
+  0% {
+  transform: translateY(0);
+  opacity: 1;
+  }
+  100% {
+  transform: translateY(var(--land-y));
+  opacity: 1;
+  }
+  }
+
+  /* 버튼이 bottom-shape에서 완전히 화면 밖으로 떨어지는 애니메이션 */
+  @keyframes fallOffScreen {
+  0% {
+  transform: translateY(var(--current-y, 0px)); /* JS에서 설정된 현재 Y 위치에서 시작 */
+  opacity: 1;
+  visibility: visible;
+  }
+  100% {
+  transform: translateY(calc(var(--current-y, 0px) + 300px)); /* 시작 위치에서 300px 더 떨어짐 */
+  opacity: 0;
+  visibility: hidden;
+  }
+  }
+
+  /* 각 애니메이션 클래스에 연결 */
+  .falling-to-land {
+  animation: fallToLand 0.5s ease-out forwards; /* 착지 애니메이션, 0.5초 */
+  }
+
+  .falling-off-screen {
+  animation: fallOffScreen 0.5s ease-in forwards; /* 낙하 애니메이션, 0.5초 */
+  }
+  /* ------------------------------------------------------------- */
+
+
+  #custom-img {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 525px;
+  height: auto;
+  border-radius: 20px;
+  transition: opacity 0.1s ease-in-out;
+  opacity: 1;
+  }
+
+  #image-container {
+  position: relative;
+  width: 560px;
+  height: 400px;
+  margin: 0.5rem auto;
+  overflow: hidden;
+  }
+
+  #black-bg-wrapper {
+  background-color: black;
+  width: 100vw;
+  overflow-x: hidden;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem 0;
+  transition: background-color 0.3s ease;
+  }
+
+  #content {
+  width: 80%;
+  max-width: 560px;
+  color: white;
+  transition: transform 0.3s ease;
+  transform-origin: top center;
+  }
+
+  #buttonContainer > div {
+  display: inline-flex;
+  min-height: 40px;
+  border-radius: 1.5rem;
+  border: 2px solid white;
+  background-color: black;
+  margin: 0 8px 8px 0;
+  padding: 0;
+  /* 추가된 z-index 및 position */
+  position: relative; 
+  z-index: 2; 
+  }
+
+  .square-button {
+  font-family: 'Paperlogy-8ExtraBold';
+  font-weight: 600;
+  font-size: 1.2rem;
+  color: white;
+  background-color: transparent;
+  border: none;
+  padding: 0 0.75rem;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  border-radius: 1.5rem;
+  }
+
+  .flex-break {
+  flex-basis: 0% !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  display: block !important;
+  line-height: 0 !important;
+  overflow: hidden !important;
+  }
+
+  .square-button.active {
+  transform: scale(1.1);
+  }
+
+  .square-button:hover {
+  background-color: white;
+  color: black;
+  }
+
+  /* Default styles for PC-like screens */
+  #buttonContainer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 0;
+  width: 100%;
+  margin-top: -8rem; /* 간격 줄임 */
+  }
+
+  /* Previous styling for #new-button-container (now re-used for the target button) */
+  #new-button-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 1rem; /* 간격 줄임 */
+  }
+  #new-button-container > div {
+  display: inline-flex;
+  min-height: 40px;
+  border-radius: 1.5rem;
+  border: 2px solid white; 
+  background-color: #cc1f1f; 
+  padding: 0;
+  justify-content: center;
+  /* 초기에는 가려져 있다가 JS로 보여짐 */
+  visibility: hidden;
+  opacity: 0;
+  }
+  #new-button-container .square-button {
+  font-family: 'Paperlogy-8ExtraBold';
+  font-weight: 600;
+  font-size: 1.2rem;
+  color: white;
+  background-color: transparent;
+  border: none;
+  padding: 0 0.75rem;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  border-radius: 1.5rem;
+  }
+
+  /* --- PC 버전 "많은 고민" 텍스트 박스 크기 및 위치 조정 (여기에 추가) --- */
+  /* 아래 변수 값들을 직접 조정하여 원하는 크기와 위치를 설정하세요. */
+  /* width: 버튼 너비, height: 버튼 높이 */
+  /* --pc-offset-x: 오른쪽으로 이동하는 양 (음수면 왼쪽으로), --pc-offset-y: 아래로 이동하는 양 (음수면 위로) */
+  :root {
+  --pc-button-width: 450px; /* 예시: 넓이 450px */
+  --pc-button-height: 60px; /* 예시: 높이 60px */
+  --pc-offset-x: -12px; /* 예시: 중앙에서 x축으로 0px 이동 (왼쪽/오른쪽) */
+  --pc-offset-y: -50px; /* 예시: 중앙에서 y축으로 0px 이동 (위/아래) */
+  }
+  #new-button-container > div {
+  width: var(--pc-button-width);
+  height: var(--pc-button-height);
+  min-height: var(--pc-button-height); /* min-height도 조정하여 고정 */
+  transform: translate(var(--pc-offset-x), var(--pc-offset-y));
+  }
+  #new-button-container .square-button {
+  font-size: 1.5rem; /* 예시: 폰트 크기 조정 (필요에 따라) */
+  padding: 0 1rem; /* 예시: 패딩 조정 (필요에 따라) */
+  }
+  /* ------------------------------------------------------------- */
+
+
+  /* New shape styles */
+  #bottom-shape {
+  width: 100%;
+  max-width: 527px; /* 사진 컨테이너와 동일한 최대 너비 */
+  min-height: 40px; /* 일반 버튼과 동일한 최소 높이 */
+  background-color: black; /* JS에서 변경될 것 */
+  border: 2px solid white; /* 항상 흰색 테두리 */
+  border-radius: 1.5rem; /* 일반 버튼과 유사한 둥근 모서리 */
+  margin: 0.4rem auto 0; /* 중앙 정렬 및 여백 */
+  box-sizing: border-box; /* 패딩과 테두리를 너비에 포함 */
+  text-align: center; /* 내부 텍스트 있으면 중앙정렬 */
+  line-height: normal; /* 텍스트 높이 맞춤 */
+  /* 추가된 z-index 및 position */
+  position: relative; 
+  z-index: 1; 
+  transition: background-color 0.3s ease, transform 0.3s ease; /* 배경색 및 transform 변경 애니메이션 */
+  transform: translateX(var(--horizontal-offset, -17px)); /* 좌우 위치 조정을 위한 코드 추가 */
+  }
+
+
+  /* For mobile screens */
+  @media (max-width: 768px) {
+  #buttonContainer {
+  margin-top: -1.5rem; /* Spacing between image and buttons in mobile */
+  justify-content: center; /* 버튼들의 줄을 중앙 정렬 */
+  }
+  #new-button-container {
+  margin-top: 0.2rem; /* spacing between image and "많은 고민" in mobile */
+  }
+  #buttonContainer > div:not(:has(#resetBtn)) {
+  min-height: 30px !important;
+  height: 32px !important;
+  margin: 0 3px 5px 0 !important;
+  border-radius: 1rem !important;
+  border-width: 1.5px !important;
+  }
+  #buttonContainer .square-button {
+  font-size: 0.9rem !important;
+  padding: 0 0.4rem !important;
+  height: 30px !important;
+  border-radius: 1rem !important;
+  }
+  #resetBtn {
+  font-size: 0.9rem !important;
+  padding: 0 !important;
+  height: 30px !important;
+  border-radius: 9999px !important;
+  min-width: 60px !important;
+  margin-left: 2px !important;
+  margin-bottom: 4px !important;
+  }
+  #content {
+  width: 95% !important;
+  max-width: none !important;
+  margin: 0 auto !important;
+  }
+  #custom-img {
+  position: relative !important;
+  width: 96% !important;
+  height: auto !important;
+  left: 0 !important;
+  display: block !important;
+  margin-left: auto !important; /* 이미지 중앙 정렬 */
+  margin-right: auto !important; /* 이미지 중앙 정렬 */
+  }
+  #image-container {
+  width: 100% !important;
+  height: auto !important;
+  position: relative !important;
+  margin: 0.5rem auto !important; /* 이미지 컨테이너 중앙 정렬 */
+  }
+
+  /* Mobile styles for new-button-container */
+  #new-button-container > div {
+  min-height: 30px !important;
+  height: 32px !important;
+  border-radius: 1rem !important;
+  border-width: 1.5px !important;
+  /* 모바일에서는 PC에서 설정한 transform을 초기화 */
+  transform: none !important;
+  width: auto !important; /* 모바일에서 너비 자동 */
+  height: auto !important; /* 모바일에서 높이 자동 */
+  }
+  #new-button-container .square-button {
+  font-size: 0.9rem !important;
+  padding: 0 0.4rem !important;
+  height: 30px !important;
+  border-radius: 1rem !important;
+  }
+  /* Mobile styles for new shape */
+  #bottom-shape {
+  min-height: 32px !important; /* 모바일 버튼 높이와 일치 */
+  border-radius: 1rem !important; /* 모바일 버튼 둥근 모서리와 일치 */
+  border-width: 1.5px !important; /* 모바일 버튼 테두리 두께와 일치 */
+  transform: none !important; /* 좌우 쏠림을 없애고 가운데 정렬 */
+  margin-left: auto !important; /* 가운데 정렬 */
+  margin-right: 8.5px !important; /* 가운데 정렬 */
+  width: 96.5% !important; /* 모바일에서 가로 길이 줄이기 */
+  max-width: 96.5% !important; /* 모바일에서 가로 길이 줄이기 */
+   
+  }
+  }
+
+  .all-clicked {
+  background-color: #cc1f1f !important;
+  color: white !important;
+  }
+
+  .shake {
+  animation: shake 0.3s;
+  }
+
+  @keyframes shake {
+  0% {
+  transform: translateY(0);
+  }
+  25% {
+  transform: translateY(-5px);
+  }
+  50% {
+  transform: translateY(5px);
+  }
+  75% {
+  transform: translateY(-5px);
+  }
+  100% {
+  transform: translateY(0);
+  }
+  }
+  </style>
+</head>
+<body>
+  <div id="black-bg-wrapper">
+  <div id="content">
+  <button id="resetBtn" class="bg-white text-black border border-black px-3 py-2 rounded-full font-bold mb-4">
+  Reset
+  </button>
+
+  <div id="image-container">
+  <img id="custom-img" src="https://imgur.com/gChhYuM.jpg" alt="custom image" />
+  </div>
+
+  <!-- "많은 고민" 텍스트 박스: HTML에 정적으로 배치되지만, JS에 의해 제어됨 -->
+  <div id="new-button-container">
+  <div><button class="square-button">많은 고민과 고통 없이는 발전도 없습니다.</button></div>
+  </div>
+
+  <div id="buttonContainer">
+  <div><button class="square-button">짧은 버전으로</button></div>
+  <div><button class="square-button">뭐야</button></div>
+  <div><button class="square-button">해 봐</button></div>
+  <div><button class="square-button">창의적으로</button></div>
+  <div><button class="square-button">뭐라도 줘 봐</button></div>
+  <div class="flex-break"></div>
+  <div><button class="square-button">알아서 잘.</button></div>
+  <div><button class="square-button">센 거 줘봐.</button></div>
+  <div><button class="square-button">느낌 있게</button></div>
+  <div><button class="square-button">자동으로 해줘</button></div>
+  <div><button class="square-button">해</button></div>
+  <div class="flex-break"></div>
+  <div><button class="square-button">좀 더 특별하게</button></div>
+  <div><button class="square-button">알아서 해줘</button></div>
+  <div><button class="square-button">뭔데</button></div>
+  <div><button class="square-button">너가 해줘</button></div>
+  <div><button class="square-button">알려줘</button></div>
+  <div class="flex-break"></div>
+  <div><button class="square-button">독창적으로</button></div>
+  <div><button class="square-button">요점만</button></div>
+  <div><button class="square-button">이건 어때</button></div>
+  <div><button class="square-button">더 예쁘게</button></div>
+  <div><button class="square-button">짧게 해줘.</button></div>
+  <div class='flex-break'></div>
+  <div><button class="square-button">예시 줘.</button></div>
+  <div><button class="square-button">그냥 해줘</button></div>
+  <div><button class="square-button">핵심만.</button></div>
+  <div><button class="square-button">요지만.</button></div>
+  <div><button class="square-button">더 감성적으로.</button></div>
+  <div class="flex-break"></div>
+  <div><button class="square-button">감각적으로</button></div>
+  <div><button class="square-button">AI느낌 빼 봐</button></div>
+  <div><button class="square-button">짧게 써줘.</button></div>
+  <div><button class="square-button">결론은?</button></div>
+  <div><button class="square-button">몰라</button></div>
+  <div class="flex-break"></div>
+  <div><button class="square-button">요약 좀</button></div>
+  <div><button class="square-button">한문장으로</button></div>
+  <div><button class="square-button">간단히.</button></div>
+  <div><button class="square-button">중요한 것만</button></div>
+  <div><button class="square-button">전체 정리</button></div>
+  </div>
+
+  <!-- 새로 추가된 도형 -->
+  <div id="bottom-shape"></div>
+
+  </div>
+  </div>
+  <script>
+  const imageList = [
+  "https://imgur.com/gChhYuM.jpg",
+  "https://imgur.com/otdxvnK.jpg",
+  "https://imgur.com/QqEzLh1.jpg",
+  "https://imgur.com/cD7msyC.jpg",
+  "https://imgur.com/fRraeLM.jpg"
+  ];
+  let clickedCount = 0;
+  let currentImageIndex = 0; // Start at the first image
+  const imgElement = document.getElementById("custom-img");
+  const originalButtons = document.querySelectorAll(".square-button"); // 모든 square-button
+  const buttonParents = document.querySelectorAll("#buttonContainer > div"); // main buttons의 부모 div
+  const buttonContainer = document.getElementById("buttonContainer"); // main button들의 컨테이너
+  const bgWrapper = document.getElementById("black-bg-wrapper");
+  const newButtonContainer = document.getElementById("new-button-container"); // "많은 고민" 텍스트 박스의 부모 컨테이너
+  const newButtonDiv = newButtonContainer.querySelector('div'); // "많은 고민" 텍스트 박스 자체 (div)
+  let clickedSet = new Set(); 
+  let newButtonCreated = false; // "많은 고민" 버튼 생성 여부 플래그
+  let allClicked = false; // allButtonsDropped와 동일한 플래그 역할로 사용
+  let droppedButtons = new Set(); 
+  let buttonsArray = Array.from(buttonParents); // 드롭할 버튼들을 담는 배열
+  let imageClickable = true; // Flag to prevent multiple clicks
+  let allButtonsDropped = false; // Flag to indicate if all initial buttons have dropped
+  const mobileBreakpoint = 768; // Adjust for the resolution you would like
+
+  // 새로 추가된 도형 요소 가져오기
+  const bottomShapeElement = document.getElementById("bottom-shape");
+  // 현재 bottom-shape에 올라와 있는 버튼 (div 요소)
+  let currentLandedButtonElement = null;
+    const resetBtn = document.getElementById("resetBtn"); // Reset 버튼 요소 가져오기
+
+  // 초기 이미지 설정
+  imgElement.src = imageList[currentImageIndex];
+
+  // "많은 고민" 박스 초기 상태 가림
+  if (newButtonDiv) {
+  newButtonDiv.style.visibility = 'hidden';
+  newButtonDiv.style.opacity = '0';
+  }
+
+  // bottom-shape 초기 스타일 설정
+  bottomShapeElement.style.borderColor = 'white'; // 항상 흰색 테두리
+  bottomShapeElement.style.backgroundColor = 'black'; // 초기 배경색
+
+  // bottom-shape 가로 위치 조절 함수
+  function setBottomShapeHorizontalPosition(offsetPx) {
+  bottomShapeElement.style.setProperty('--horizontal-offset', offsetPx + 'px');
+  }
+
+  // 버튼을 bottom-shape에 떨어뜨리는 함수
+  function dropRandomButtonToShape() {
+  if (buttonsArray.length === 0) {
+  return null; // 더 이상 떨어뜨릴 버튼이 없음
+  }
+
+  const randomIndex = Math.floor(Math.random() * buttonsArray.length);
+  const buttonToDropDiv = buttonsArray[randomIndex];
+
+  // buttonsArray에서 해당 버튼 제거
+  buttonsArray.splice(randomIndex, 1);
+
+  // 버튼의 현재 위치와 buttonContainer의 위치를 기준으로 translateY 값 계산
+  // 이는 버튼이 buttonContainer 내에서 어느 위치에 있든 정확한 실제 위치를 계산하여 랜딩 시 오차가 없도록 합니다.
+  // 그리고 bottom-shape의 중앙에 오도록 Y 위치를 조정합니다.
+  const bottomShapeRect = bottomShapeElement.getBoundingClientRect();
+  const buttonContainerRect = buttonContainer.getBoundingClientRect();
+  const buttonDivRect = buttonToDropDiv.getBoundingClientRect(); // 버튼 자체의 크기/위치
+
+  // 버튼의 초기 Y 위치 (뷰포트 기준) - buttonContainer의 상단 위치
+  const buttonInitialYRelativeToContainer = buttonDivRect.top - buttonContainerRect.top;
+   
+  // bottom-shape의 중앙 Y 위치 (뷰포트 기준) - buttonContainer의 상단 위치
+  // (bottom-shape의 뷰포트 상단 위치) - (buttonContainer의 뷰포트 상단 위치) + (bottom-shape 높이의 절반)
+  const bottomShapeCenterYRelativeToContainer = (bottomShapeRect.top - buttonContainerRect.top) + (bottomShapeRect.height / 2);
+
+  // 버튼의 최종 transform Y 값: bottom-shape의 중앙 - 버튼의 중앙 (buttonContainer 기준)
+  const translateYOffset = bottomShapeCenterYRelativeToContainer - (buttonInitialYRelativeToContainer + (buttonDivRect.height / 2));
+
+
+  // CSS 변수 설정 및 애니메이션 클래스 추가
+  buttonToDropDiv.style.setProperty('--land-y', translateYOffset + 'px');
+  buttonToDropDiv.classList.remove('falling-off-screen'); // 혹시 모를 이전 클래스 제거
+
+  // 애니메이션 시작 전 현재 transform을 초기화 (애니메이션이 from 0% 시작하도록)
+  // 주의: 이 시점의 transform은 여전히 초기 버튼 위치의 transform입니다.
+  buttonToDropDiv.style.transform = 'translateY(0)'; 
+  buttonToDropDiv.classList.add('falling-to-land');
+  buttonToDropDiv.style.opacity = '1'; // 투명도 유지
+  buttonToDropDiv.style.visibility = 'visible'; // 보이도록 유지
+
+  // 'falling-to-land' 애니메이션 종료 시 클래스 제거 및 final transform을 inline style로 설정
+  const landedHandler = function(event) {
+  if (event.animationName === 'fallToLand') {
+   buttonToDropDiv.classList.remove('falling-to-land');
+   // 애니메이션이 끝난 후 final transform을 inline style로 고정시킨다
+   // 이것이 다음 애니메이션의 시작점이 되도록 합니다.
+   buttonToDropDiv.style.transform = `translateY(${translateYOffset}px)`; /* 수정된 부분 */
+   buttonToDropDiv.removeEventListener('animationend', landedHandler);
+  }
+  };
+  buttonToDropDiv.addEventListener('animationend', landedHandler);
+
+  return buttonToDropDiv;
+  }
+
+  // 이미지 클릭 리스너
+  imgElement.addEventListener("click", function() {
+  // 배경색이 빨간색이면 이미지 클릭 작동 중지
+  if (allButtonsDropped) {
+  return;
+  }
+
+  if (!imageClickable) { // 쿨타임 중이면 클릭 무시
+  return;
+  }
+  imageClickable = false; // 클릭 즉시 비활성화
+
+  imgElement.classList.add("shake");
+  setTimeout(() => { // 흔들림 애니메이션 후 클래스 제거
+  imgElement.classList.remove("shake");
+  }, 300);
+
+  // 1단계: 기존에 bottom-shape에 있던 버튼이 있다면 완전히 떨어뜨림
+  // 현재 착지된 버튼을 저장 (이 함수 스코프 내에서만 사용)
+  let prevLandedButton = currentLandedButtonElement;
+  currentLandedButtonElement = null; // 새로운 버튼을 위해 초기화
+
+  if (prevLandedButton) {
+  prevLandedButton.classList.remove('falling-to-land'); // 혹시 모를 이전 애니메이션 중단
+
+  // 현재 버튼의 transform 값을 읽어와 --current-y 변수에 설정
+  const style = window.getComputedStyle(prevLandedButton);
+  const matrix = new DOMMatrix(style.transform);
+  const currentYTranslate = matrix.m42; // 2D transform matrix의 translateY 값
+
+  prevLandedButton.style.setProperty('--current-y', currentYTranslate + 'px');
+   
+  prevLandedButton.classList.add('falling-off-screen'); // 완전 낙하 애니메이션 시작
+
+  // 'falling-off-screen' 애니메이션 종료 시 정리
+  const offScreenHandler = function(event) {
+   if (event.animationName === 'fallOffScreen') {
+   // 애니메이션 완료 후 원상태로 돌려 재사용 가능하게 함
+   prevLandedButton.classList.remove('falling-off-screen');
+   prevLandedButton.style.opacity = '0';
+   prevLandedButton.style.visibility = 'hidden';
+   prevLandedButton.style.transform = 'translateY(0)'; // 초기 위치로 리셋
+   prevLandedButton.style.removeProperty('--current-y'); // 사용했던 CSS 변수 제거
+   prevLandedButton.removeEventListener('animationend', offScreenHandler); // 리스너 제거
+   }
+  };
+  prevLandedButton.addEventListener('animationend', offScreenHandler);
+  }
+   
+  // 2단계: 새로운 버튼을 bottom-shape로 떨어뜨림 (아직 떨어뜨릴 버튼이 있을 경우에만)
+  if (buttonsArray.length > 0) {
+  const newLandedButton = dropRandomButtonToShape();
+  if (newLandedButton) {
+   currentLandedButtonElement = newLandedButton; // 새로운 버튼을 현재 착지 버튼으로 설정
+  }
+  } 
+  // 모든 일반 버튼이 떨어지면 (배경 변경 및 "많은 고민" 상태로 전환)
+  else {
+  if (!allClicked) { // 첫 번째 전환 시에만 실행 
+   allButtonsDropped = true; 
+
+   // 전체 배경색과 bottom-shape 배경색 동시에 변경
+   bgWrapper.style.backgroundColor = "#cc1f1f"; 
+   bottomShapeElement.style.backgroundColor = "#cc1f1f"; 
+    
+   allClicked = true; 
+   currentImageIndex = imageList.length - 1; // 마지막 이미지로 고정
+   imgElement.src = imageList[currentImageIndex];
+    
+   // "많은 고민" 텍스트 박스 나타내기
+   if (newButtonDiv) {
+   newButtonDiv.style.visibility = 'visible';
+   newButtonDiv.style.opacity = '1';
+   }
+   newButtonCreated = true;
+
+   // Reset 버튼 스타일 변경
+        resetBtn.style.color = "#cc1f1f"; // 글자색을 빨간색으로
+        resetBtn.style.borderColor = "white"; // 테두리색을 흰색으로
+  }
+  }
+
+  clickedCount++; // 클릭 횟수 증가 
+   
+  // 이미지 변경 로직 (7회 클릭마다, 5번째 사진까지, 모든 버튼이 떨어지지 않았을 경우)
+  // currentImageIndex < imageList.length - 1 (즉, currentImageIndex < 4) 조건이 5번째 사진(인덱스 4)까지만 변경하도록 합니다.
+  if (clickedCount % 7 === 0 && currentImageIndex < imageList.length - 1 && !allButtonsDropped) {
+  // 기존에 opacity 0으로 설정되어 화면에서 완전히 사라지던 부분을 '0.01'로 변경하여 거의 사라지지만 완전히 투명해지지는 않도록 수정
+  imgElement.style.opacity = 0.01; 
+  setTimeout(() => {
+   currentImageIndex = (currentImageIndex + 1) % imageList.length;
+   imgElement.src = imageList[currentImageIndex];
+   imgElement.onload = () => { imgElement.style.opacity = 1; };
+  }, 100);
+  }
+
+  // 0.1초(100ms) 후에 이미지 클릭 재활성화
+  setTimeout(() => {
+  imageClickable = true;
+  }, 100); 
+  });
+
+  // 리셋 버튼
+  document.getElementById("resetBtn").onclick = () => {
+  currentImageIndex = 0; 
+  clickedCount = 0;
+   
+  imgElement.src = imageList[currentImageIndex];
+  imgElement.style.opacity = 1;
+
+  // 모든 버튼(부모 div) 스타일 초기화 및 복원
+  buttonParents.forEach(parentDiv => {
+  parentDiv.classList.remove("falling-to-land", "falling-off-screen"); // 모든 낙하 클래스 제거
+  parentDiv.style.transform = 'translateY(0)'; // 초기 위치
+  parentDiv.style.opacity = '1';
+  parentDiv.style.visibility = 'visible';
+  parentDiv.style.removeProperty('--land-y'); // CSS 변수 제거
+  parentDiv.style.removeProperty('--current-y'); // '--current-y' 변수도 제거
+  });
+
+  bgWrapper.style.backgroundColor = "black";
+  allClicked = false;
+  imgElement.classList.remove("shake");
+  buttonsArray = Array.from(buttonParents); // 드롭할 버튼 배열 복원
+  imageClickable = true;
+  allButtonsDropped = false;
+
+  // "많은 고민" 버튼 다시 숨기기 및 생성 플래그 초기화
+  if (newButtonDiv) {
+  newButtonDiv.style.visibility = 'hidden';
+  newButtonDiv.style.opacity = '0';
+  }
+  newButtonCreated = false;
+
+  // currentLandedButtonElement 초기화
+  if (currentLandedButtonElement) { // 리셋 시 현재 바텀쉐이프에 있는 버튼도 초기화
+  currentLandedButtonElement.classList.remove('falling-to-land', 'falling-off-screen');
+  currentLandedButtonElement.style.transform = 'translateY(0)';
+  currentLandedButtonElement.style.opacity = '1';
+  currentLandedButtonElement.style.visibility = 'visible';
+  currentLandedButtonElement.style.removeProperty('--land-y');
+  currentLandedButtonElement.style.removeProperty('--current-y'); // '--current-y' 변수도 제거
+  }
+  currentLandedButtonElement = null; // 최종적으로 null 설정
+
+  // bottom-shape 색상 초기화
+  bottomShapeElement.style.borderColor = 'white'; // 항상 흰색
+  bottomShapeElement.style.backgroundColor = 'black'; // 초기 배경색
+
+    // Reset 버튼 스타일 초기화
+    resetBtn.style.color = "black"; // 글자색을 검정색으로
+    resetBtn.style.borderColor = "black"; // 테두리색을 검정색으로
+  };
+  </script>
+</body>
